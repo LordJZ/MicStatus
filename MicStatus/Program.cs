@@ -57,7 +57,6 @@ namespace MicStatus
         {
             if (Volume == null)
             {
-                Icon.Visible = false;
                 Application.Exit();
                 return;
             }
@@ -94,6 +93,7 @@ namespace MicStatus
 
         static void OnExit(object sender, EventArgs e)
         {
+            Icon.Dispose();
             DisposeVolume();
         }
     }
