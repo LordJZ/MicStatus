@@ -22,6 +22,7 @@ namespace MicStatus
             Application.SetCompatibleTextRenderingDefault(false);
             InitializeIcon();
             InitializeAudioDevice();
+            SetMuted(Volume.Mute);
             Application.ApplicationExit += OnExit;
             Application.Run();
         }
@@ -29,15 +30,21 @@ namespace MicStatus
         static void InitializeIcon()
         {
             Icon = new NotifyIcon();
+            Icon.Click += ToggleMuteClicked;
             Icon.ContextMenu = new ContextMenu(new[]
             {
+                ToggleMuteMenuItem = new MenuItem("Mute", ToggleMuteClicked),
                 new MenuItem("Quit", QuitClicked)
             });
+            Icon.ContextMenu.Popup += ContextMenu_Popup;
             Icon.Visible = true;
         }
 
         static NotifyIcon Icon;
+        static MenuItem ToggleMuteMenuItem;
         static AudioEndpointVolume Volume;
+        static bool Muted;
+        static int SuppressClick;
 
         static void InitializeAudioDevice()
         {
@@ -61,7 +68,26 @@ namespace MicStatus
                 return;
             }
 
-            Icon.Icon = Volume.Mute ? Properties.Resources.MicRed : Properties.Resources.MicWhite;
+            bool muted = Volume.Mute;
+            if (muted == Muted)
+                return;
+
+            SetMuted(muted);
+        }
+
+        static void SetMuted(bool muted)
+        {
+            Muted = muted;
+            if (muted)
+            {
+                Icon.Icon = Properties.Resources.MicRed;
+                ToggleMuteMenuItem.Text = "Unmute";
+            }
+            else
+            {
+                Icon.Icon = Properties.Resources.MicWhite;
+                ToggleMuteMenuItem.Text = "Mute";
+            }
         }
 
         static void VolumeUpdated(AudioVolumeNotificationData data)
@@ -84,6 +110,22 @@ namespace MicStatus
             Volume.OnVolumeNotification -= VolumeUpdated;
             Volume.Dispose();
             Volume = null;
+        }
+
+        static void ContextMenu_Popup(object sender, EventArgs e)
+        {
+            ++SuppressClick;
+        }
+
+        static void ToggleMuteClicked(object o, EventArgs e)
+        {
+            if (SuppressClick > 0)
+            {
+                --SuppressClick;
+                return;
+            }
+
+            Volume.Mute = !Volume.Mute;
         }
 
         static void QuitClicked(object o, EventArgs e)
