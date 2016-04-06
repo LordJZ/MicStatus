@@ -6,18 +6,34 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CUE.NET;
+using CUE.NET.Devices.Generic;
+using CUE.NET.Devices.Keyboard;
+using CUE.NET.Devices.Keyboard.Enums;
 using NAudio.CoreAudioApi;
 
 namespace MicStatus
 {
     static class Program
     {
+        const CorsairKeyboardKeyId KeyboardKey = CorsairKeyboardKeyId.G17;
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main()
         {
+            try
+            {
+                CueSDK.Initialize();
+                Led = CueSDK.KeyboardSDK[KeyboardKey].Led;
+            }
+            catch
+            {
+                // ignore
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             InitializeIcon();
@@ -43,6 +59,7 @@ namespace MicStatus
         static NotifyIcon Icon;
         static MenuItem ToggleMuteMenuItem;
         static AudioEndpointVolume Volume;
+        static CorsairLed Led;
         static bool Muted;
         static int SuppressClick;
 
@@ -87,6 +104,16 @@ namespace MicStatus
             {
                 Icon.Icon = Properties.Resources.MicWhite;
                 ToggleMuteMenuItem.Text = "Mute";
+            }
+
+            try
+            {
+                Led.Color = muted ? Color.FromArgb(170, 0, 0) : Color.Blue;
+                CueSDK.KeyboardSDK.Update();
+            }
+            catch
+            {
+                // ignore
             }
         }
 
