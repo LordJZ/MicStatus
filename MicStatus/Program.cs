@@ -24,21 +24,20 @@ namespace MicStatus
         [STAThread]
         static void Main()
         {
-            try
-            {
-                CueSDK.Initialize();
-                Led = CueSDK.KeyboardSDK[KeyboardKey].Led;
-            }
-            catch
-            {
-                // ignore
-            }
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            InitializeKeyboard(true);
             InitializeIcon();
             InitializeAudioDevice();
+
+            Muted = !Volume.Mute;
             SetMuted(Volume.Mute);
+
+            Timer = new Timer();
+            Timer.Interval = 20000;
+            Timer.Enabled = true;
+            Timer.Tick += Timer_Tick;
+
             Application.ApplicationExit += OnExit;
             Application.Run();
         }
@@ -57,11 +56,38 @@ namespace MicStatus
         }
 
         static NotifyIcon Icon;
+        static Timer Timer;
         static MenuItem ToggleMuteMenuItem;
         static AudioEndpointVolume Volume;
         static CorsairLed Led;
         static bool Muted;
         static int SuppressClick;
+
+        static void Timer_Tick(object sender, EventArgs e)
+        {
+            InitializeKeyboard();
+
+            SetMuted(Volume.Mute);
+        }
+
+        static void InitializeKeyboard(bool firstTime = false)
+        {
+            Led = null;
+
+            try
+            {
+                if (firstTime)
+                    CueSDK.Initialize();
+                else
+                    CueSDK.Reinitialize();
+
+                Led = CueSDK.KeyboardSDK[KeyboardKey].Led;
+            }
+            catch
+            {
+                // ignore
+            }
+        }
 
         static void InitializeAudioDevice()
         {
@@ -85,36 +111,31 @@ namespace MicStatus
                 return;
             }
 
-            bool muted = Volume.Mute;
-            if (muted == Muted)
-                return;
-
-            SetMuted(muted);
+            SetMuted(Volume.Mute);
         }
 
         static void SetMuted(bool muted)
         {
-            Muted = muted;
-            if (muted)
+            if (Muted != muted)
             {
-                Icon.Icon = Properties.Resources.MicRed;
-                ToggleMuteMenuItem.Text = "Unmute";
-            }
-            else
-            {
-                Icon.Icon = Properties.Resources.MicWhite;
-                ToggleMuteMenuItem.Text = "Mute";
+                Icon.Icon = muted ? Properties.Resources.MicRed : Properties.Resources.MicWhite;
+                ToggleMuteMenuItem.Text = muted ? "Unmute" : "Mute";
             }
 
             try
             {
-                Led.Color = muted ? Color.FromArgb(170, 0, 0) : Color.Blue;
-                CueSDK.KeyboardSDK.Update();
+                if (Led != null)
+                {
+                    Led.Color = muted ? Color.FromArgb(170, 0, 0) : Color.Blue;
+                    CueSDK.KeyboardSDK.Update();
+                }
             }
             catch
             {
                 // ignore
             }
+
+            Muted = muted;
         }
 
         static void VolumeUpdated(AudioVolumeNotificationData data)
