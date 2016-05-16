@@ -85,7 +85,17 @@ namespace MicStatus
             }
             catch
             {
-                // ignore
+                if (!firstTime)
+                {
+                    try
+                    {
+                        InitializeKeyboard(true);
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                }
             }
         }
 
