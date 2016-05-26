@@ -65,8 +65,6 @@ namespace MicStatus
 
         static void Timer_Tick(object sender, EventArgs e)
         {
-            InitializeKeyboard();
-
             SetMuted(Volume.Mute);
         }
 
@@ -134,6 +132,9 @@ namespace MicStatus
 
             try
             {
+                if (Led == null)
+                    InitializeKeyboard(true);
+
                 if (Led != null)
                 {
                     Led.Color = muted ? Color.FromArgb(170, 0, 0) : Color.Blue;
