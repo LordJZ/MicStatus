@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Permissions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CUE.NET;
@@ -16,6 +17,21 @@ namespace MicStatus
 {
     static class Program
     {
+        class MessageFilter : IMessageFilter
+        {
+            public bool PreFilterMessage(ref Message m)
+            {
+                // WM_CLOSE
+                if (m.Msg == 16)
+                {
+                    Application.Exit();
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
         const CorsairKeyboardKeyId KeyboardKey = CorsairKeyboardKeyId.G17;
 
         /// <summary>
@@ -38,6 +54,7 @@ namespace MicStatus
             Timer.Enabled = true;
             Timer.Tick += Timer_Tick;
 
+            Application.AddMessageFilter(new MessageFilter());
             Application.ApplicationExit += OnExit;
             Application.Run();
         }
